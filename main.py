@@ -1,16 +1,84 @@
-# This is a sample Python script.
+from functions import *
+import matplotlib.pyplot as plt
+import numpy as np
+from tabulate import tabulate
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+a = 0
+b = 1
 
+n = 11  # Количество узлов (10 интервалов)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+h = (b - a) / (n - 1)
+x = np.linspace(a, b, n)
 
+print("Шаг равен:", h)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+A = np.zeros(n - 2)  # Нижняя диагональ
+B = np.zeros(n - 2)  # Главная
+C = np.zeros(n - 2)  # Верхняя
+D = np.zeros(n - 2)  # Правая часть
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# Коэффициенты тридиагональной матрицы
+for i in range(1, n - 1):
+    xi = x[i]
+
+    a_i = 1 / h ** 2 - p(xi) / (2 * h)
+    b_i = -2 / h ** 2 + q(xi)
+    c_i = 1 / h ** 2 + p(xi) / (2 * h)
+    d_i = f(xi)
+
+    if i == 1:
+        d_i -= (1 / h ** 2 - p(xi) / (2 * h)) * 0  # y[0] = 0
+    elif i == n - 2:
+        d_i -= (1 / h ** 2 + p(xi) / (2 * h)) * 1  # y[n-1] = 1
+
+    if i < n - 1:
+        A[i - 1] = a_i
+        B[i - 1] = b_i
+        C[i - 1] = c_i
+        D[i - 1] = d_i
+
+print("\n", A)
+print(B)
+print(C)
+print(D, "\n")
+
+y_pr = medhod_progonki(A, B, C, D)
+
+y_num = np.zeros(n)
+
+y_num[0] = 0  # Граничные условия
+y_num[-1] = 1
+
+y_num[1:-1] = y_pr  # Внутренность
+
+y_correct = correct_f(x)
+error = np.zeros(n)
+
+for i in range(n):
+    error[i] = abs(y_num[i] - y_correct[i])
+
+plt.figure(figsize=(10, 6))
+plt.plot(x, y_num, 'bo-', label='Численное решение')
+plt.plot(x, y_correct, 'r--', label='Точное решение')
+plt.xlabel('x')
+plt.ylabel('y(x)')
+plt.title('Сравнение численного и точного решений (метод прогонки)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+table_data = []
+for i in range(len(x)):
+    table_data.append([
+        f"{x[i]:.2f}",
+        f"{y_num[i]:.10f}",
+        f"{y_correct[i]:.10f}",
+        f"{error[i]:.5f}",
+    ])
+
+headers = ["x", "Численное решение", "Точное значение", "Погрешность"]
+
+print(tabulate(table_data, headers=headers, tablefmt="grid"))
+
+print(check(y_num, y_correct))
